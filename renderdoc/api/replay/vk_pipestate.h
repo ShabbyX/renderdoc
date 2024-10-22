@@ -748,7 +748,13 @@ struct DepthStencil
   float maxDepthBounds = 0.0f;
 };
 
-DOCUMENT("Describes the setup of a renderpass and subpasses.");
+DOCUMENT(R"(Describes the setup of a renderpass and subpasses.
+
+.. data:: AttachmentUnused
+
+  Alias for VK_ATTACHMENT_UNUSED, for use by the UI to know when a value in colorAttachmentLocations
+  or colorAttachmentInputIndices is mapped to VK_ATTACHMENT_UNUSED.
+)");
 struct RenderPass
 {
   DOCUMENT("");
@@ -859,6 +865,32 @@ samples used to render this subpass.
 If the subpass is not internally multisampled, tileOnlyMSAASampleCount is set to 0.
 )");
   uint32_t tileOnlyMSAASampleCount = 0;
+
+  DOCUMENT(R"(The color index->location mapping set up by dynamic rendering local read.
+
+:type: List[int]
+)");
+  rdcarray<uint32_t> colorAttachmentLocations;
+
+  DOCUMENT(R"(The color index->input index mapping set up by dynamic rendering local read.
+
+:type: List[int]
+)");
+  rdcarray<uint32_t> colorAttachmentInputIndices;
+
+  DOCUMENT("Whether or not depth input attachment index is implicit (dynamic rendering).");
+  bool isDepthInputAttachmentIndexImplicit = true;
+
+  DOCUMENT("Whether or not stencil  input attachment index is implicit (dynamic rendering).");
+  bool isStencilInputAttachmentIndexImplicit = true;
+
+  DOCUMENT("Depth input attachment index if explicit (dynamic rendering).");
+  uint32_t depthInputAttachmentIndex = UINT32_MAX;
+
+  DOCUMENT("Stencil input attachment index if explicit (dynamic rendering).");
+  uint32_t stencilInputAttachmentIndex = UINT32_MAX;
+
+  static const uint32_t AttachmentUnused = ~0U;
 };
 
 DOCUMENT("Describes a framebuffer object and its attachments.");

@@ -2182,8 +2182,14 @@ void DoSerialise(SerialiserType &ser, VKPipe::RenderPass &el)
   SERIALISE_MEMBER(multiviews);
   SERIALISE_MEMBER(fragmentDensityOffsets);
   SERIALISE_MEMBER(tileOnlyMSAASampleCount);
+  SERIALISE_MEMBER(colorAttachmentLocations);
+  SERIALISE_MEMBER(colorAttachmentInputIndices);
+  SERIALISE_MEMBER(isDepthInputAttachmentIndexImplicit);
+  SERIALISE_MEMBER(isStencilInputAttachmentIndexImplicit);
+  SERIALISE_MEMBER(depthInputAttachmentIndex);
+  SERIALISE_MEMBER(stencilInputAttachmentIndex);
 
-  SIZE_CHECK(168);
+  SIZE_CHECK(232);
 }
 
 template <typename SerialiserType>
@@ -2219,7 +2225,7 @@ void DoSerialise(SerialiserType &ser, VKPipe::CurrentPass &el)
   SERIALISE_MEMBER(depthFeedbackAllowed);
   SERIALISE_MEMBER(stencilFeedbackAllowed);
 
-  SIZE_CHECK(240);
+  SIZE_CHECK(304);
 }
 
 template <typename SerialiserType>
@@ -2289,7 +2295,7 @@ void DoSerialise(SerialiserType &ser, VKPipe::State &el)
 
   SERIALISE_MEMBER(conditionalRendering);
 
-  SIZE_CHECK(1808);
+  SIZE_CHECK(1872);
 }
 
 #pragma endregion Vulkan pipeline state

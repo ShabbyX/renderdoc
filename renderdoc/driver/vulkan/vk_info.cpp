@@ -1109,6 +1109,8 @@ void VulkanCreationInfo::Pipeline::Init(VulkanResourceManager *resourceMan,
     stencilFormat = VK_FORMAT_UNDEFINED;
   }
 
+  dynamicRenderingLocalRead.Init((const VkBaseInStructure *)pCreateInfo);
+
   RDCEraseEl(dynamicStates);
   if(pCreateInfo->pDynamicState)
   {
@@ -1645,6 +1647,8 @@ void VulkanCreationInfo::Pipeline::Init(VulkanResourceManager *resourceMan,
         shadingRateCombiners[0] = pipeInfo.shadingRateCombiners[0];
         shadingRateCombiners[1] = pipeInfo.shadingRateCombiners[1];
 
+        dynamicRenderingLocalRead.CopyInputIndices(pipeInfo.dynamicRenderingLocalRead);
+
         flags |= pipeInfo.flags;
       }
 
@@ -1673,6 +1677,8 @@ void VulkanCreationInfo::Pipeline::Init(VulkanResourceManager *resourceMan,
         colorFormats = pipeInfo.colorFormats;
         depthFormat = pipeInfo.depthFormat;
         stencilFormat = pipeInfo.stencilFormat;
+
+        dynamicRenderingLocalRead.CopyLocations(pipeInfo.dynamicRenderingLocalRead);
 
         flags |= pipeInfo.flags;
       }

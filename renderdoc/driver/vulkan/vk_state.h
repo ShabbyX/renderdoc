@@ -289,6 +289,9 @@ struct VulkanRenderState
 
     bool tileOnlyMSAAEnable = false;
     VkSampleCountFlagBits tileOnlyMSAASampleCount = VK_SAMPLE_COUNT_1_BIT;
+
+    // VK_KHR_dynamic_rendering_local_read
+    DynamicRenderingLocalRead localRead;
   } dynamicRendering;
 
   // fdm offset

@@ -3218,11 +3218,13 @@ struct VulkanPixelHistoryPerFragmentCallback : VulkanPixelHistoryCallback
       for(uint32_t i = 0; i < 2; i++)
       {
         uint32_t storeOffset = (fragsProcessed + f) * sizeof(PerFragmentInfo);
+        bool isPrimitiveIDPipe = i == 0;
 
-        VkMarkerRegion region(cmd, StringFormat::Fmt("Getting %s for %u",
-                                                     i == 0 ? "primitive ID" : "shader output", eid));
+        VkMarkerRegion region(
+            cmd, StringFormat::Fmt("Getting %s for %u",
+                                   isPrimitiveIDPipe ? "primitive ID" : "shader output", eid));
 
-        if(i == 0 && !m_pDriver->GetDeviceEnabledFeatures().geometryShader)
+        if(isPrimitiveIDPipe && !m_pDriver->GetDeviceEnabledFeatures().geometryShader)
         {
           // without geometryShader, can't read primitive ID in pixel shader
           VkMarkerRegion::Set("Can't get primitive ID without geometryShader feature", cmd);
@@ -3303,7 +3305,7 @@ struct VulkanPixelHistoryPerFragmentCallback : VulkanPixelHistoryCallback
           state.shaderObjects[(uint32_t)ShaderStage::Fragment] = shadsIter[i];
 
           // set dynamic state
-          if(i == 0)
+          if(isPrimitiveIDPipe)
           {
             // first pass - fragment shader which outputs primitive ID
             state.depthTestEnable = false;
@@ -3315,6 +3317,13 @@ struct VulkanPixelHistoryPerFragmentCallback : VulkanPixelHistoryCallback
             state.depthTestEnable = prevState.depthTestEnable;
             state.depthWriteEnable = true;
           }
+        }
+
+        // The primitive ID shader always writes to location 0, so make sure that's not remapped
+        // with VK_KHR_dynamic_rendering_local_read.
+        if(isPrimitiveIDPipe && prevState.dynamicRendering.localRead.AreLocationsNonDefault())
+        {
+          state.dynamicRendering.localRead = {};
         }
 
         m_pDriver->GetCmdRenderState().BeginRenderPassAndApplyState(
@@ -3329,7 +3338,10 @@ struct VulkanPixelHistoryPerFragmentCallback : VulkanPixelHistoryCallback
         m_pDriver->ReplayDraw(cmd, *action);
         state.EndRenderPass(cmd);
 
-        if(i == 1)
+        // Restore location mapping for the other pipelines.
+        state.dynamicRendering.localRead = prevState.dynamicRendering.localRead;
+
+        if(!isPrimitiveIDPipe)
         {
           storeOffset += offsetof(struct PerFragmentInfo, shaderOut);
           if(depthEnabled)
@@ -3707,7 +3719,6 @@ struct VulkanPixelHistoryPerFragmentCallback : VulkanPixelHistoryCallback
     else
     {
       pipes.primitiveIdPipe = VK_NULL_HANDLE;
-      RDCWARN("Can't get primitive ID at event %u due to lack of geometry shader support", eid);
     }
 
     return pipes;

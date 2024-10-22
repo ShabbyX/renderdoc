@@ -288,6 +288,9 @@ struct VulkanCreationInfo
     VkFormat depthFormat;
     VkFormat stencilFormat;
 
+    // VkRenderingAttachmentLocationInfoKHR and VkRenderingInputAttachmentIndexInfoKHR
+    DynamicRenderingLocalRead dynamicRenderingLocalRead;
+
     // a variant of the pipeline that uses subpass 0, used for when we are replaying in isolation.
     // See loadRPs in the RenderPass info
     VkPipeline subpass0pipe;

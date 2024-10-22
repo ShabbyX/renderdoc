@@ -326,6 +326,46 @@ private:
   bool maliBrokenASDeviceSerialisation = false;
 };
 
+struct DynamicRenderingLocalRead
+{
+  void Init(const VkBaseInStructure *infoStruct);
+
+  void UpdateLocations(const VkRenderingAttachmentLocationInfoKHR &attachmentLocationInfo);
+  void UpdateInputIndices(const VkRenderingInputAttachmentIndexInfoKHR &inputAttachmentIndexInfo);
+
+  void CopyLocations(const DynamicRenderingLocalRead &from);
+  void CopyInputIndices(const DynamicRenderingLocalRead &from);
+
+  bool AreLocationsNonDefault() { return !colorAttachmentLocations.isEmpty(); }
+  bool AreInputIndicesNonDefault()
+  {
+    return !colorAttachmentInputIndices.isEmpty() || !isDepthInputAttachmentIndexImplicit ||
+           !isStencilInputAttachmentIndexImplicit;
+  }
+
+  void SetLocations(VkCommandBuffer cmd);
+  void SetInputIndices(VkCommandBuffer cmd);
+
+  // VkRenderingAttachmentLocationInfoKHR
+  // Notes:
+  // - If the array is empty, it indicates an identity mapping.
+  // - If an element is VK_ATTACHMENT_UNUSED, writes to it are disabled (as if the color
+  //   attachment is masked)
+  rdcarray<uint32_t> colorAttachmentLocations;
+
+  // VkRenderingInputAttachmentIndexInfoKHR
+  // Notes:
+  // - The depth/stencil indices are only set if the is..Implicit flag is false.  By default, the
+  //   depth/stencil indices are assumed to be implicit (no input_attachment_index decoration
+  //   needed in the shader).
+  // - If an element is VK_ATTACHMENT_UNUSED, it won't be used as input attachment.
+  rdcarray<uint32_t> colorAttachmentInputIndices;
+  bool isDepthInputAttachmentIndexImplicit = true;
+  bool isStencilInputAttachmentIndexImplicit = true;
+  uint32_t depthInputAttachmentIndex = ~0U;
+  uint32_t stencilInputAttachmentIndex = ~0U;
+};
+
 enum
 {
   VkCheckLayer_unique_objects,
@@ -1091,6 +1131,8 @@ enum class VulkanChunk : uint32_t
   vkCmdTraceRaysIndirectKHR,
   vkCmdTraceRaysKHR,
   vkCreateRayTracingPipelinesKHR,
+  vkCmdSetRenderingAttachmentLocationsKHR,
+  vkCmdSetRenderingInputAttachmentIndicesKHR,
   Max,
 };
 
@@ -1335,6 +1377,7 @@ DECLARE_REFLECTION_STRUCT(VkPhysicalDeviceDescriptorIndexingProperties)
 DECLARE_REFLECTION_STRUCT(VkPhysicalDeviceDiscardRectanglePropertiesEXT);
 DECLARE_REFLECTION_STRUCT(VkPhysicalDeviceDriverProperties);
 DECLARE_REFLECTION_STRUCT(VkPhysicalDeviceDynamicRenderingFeatures);
+DECLARE_REFLECTION_STRUCT(VkPhysicalDeviceDynamicRenderingLocalReadFeaturesKHR);
 DECLARE_REFLECTION_STRUCT(VkPhysicalDeviceExtendedDynamicState2FeaturesEXT);
 DECLARE_REFLECTION_STRUCT(VkPhysicalDeviceExtendedDynamicState3FeaturesEXT);
 DECLARE_REFLECTION_STRUCT(VkPhysicalDeviceExtendedDynamicState3PropertiesEXT);
@@ -1519,8 +1562,10 @@ DECLARE_REFLECTION_STRUCT(VkRayTracingShaderGroupCreateInfoKHR);
 DECLARE_REFLECTION_STRUCT(VkRefreshCycleDurationGOOGLE);
 DECLARE_REFLECTION_STRUCT(VkReleaseSwapchainImagesInfoEXT);
 DECLARE_REFLECTION_STRUCT(VkRenderingAttachmentInfo);
+DECLARE_REFLECTION_STRUCT(VkRenderingAttachmentLocationInfoKHR);
 DECLARE_REFLECTION_STRUCT(VkRenderingFragmentDensityMapAttachmentInfoEXT);
 DECLARE_REFLECTION_STRUCT(VkRenderingFragmentShadingRateAttachmentInfoKHR);
+DECLARE_REFLECTION_STRUCT(VkRenderingInputAttachmentIndexInfoKHR);
 DECLARE_REFLECTION_STRUCT(VkRenderingInfo);
 DECLARE_REFLECTION_STRUCT(VkRenderPassAttachmentBeginInfo);
 DECLARE_REFLECTION_STRUCT(VkRenderPassBeginInfo);
@@ -1775,6 +1820,7 @@ DECLARE_DESERIALISE_TYPE(VkPhysicalDeviceDescriptorIndexingProperties)
 DECLARE_DESERIALISE_TYPE(VkPhysicalDeviceDiscardRectanglePropertiesEXT);
 DECLARE_DESERIALISE_TYPE(VkPhysicalDeviceDriverProperties);
 DECLARE_DESERIALISE_TYPE(VkPhysicalDeviceDynamicRenderingFeatures);
+DECLARE_DESERIALISE_TYPE(VkPhysicalDeviceDynamicRenderingLocalReadFeaturesKHR);
 DECLARE_DESERIALISE_TYPE(VkPhysicalDeviceExtendedDynamicState2FeaturesEXT);
 DECLARE_DESERIALISE_TYPE(VkPhysicalDeviceExtendedDynamicState3FeaturesEXT);
 DECLARE_DESERIALISE_TYPE(VkPhysicalDeviceExtendedDynamicState3PropertiesEXT);
@@ -1957,8 +2003,10 @@ DECLARE_DESERIALISE_TYPE(VkRayTracingPipelineInterfaceCreateInfoKHR);
 DECLARE_DESERIALISE_TYPE(VkRayTracingShaderGroupCreateInfoKHR);
 DECLARE_DESERIALISE_TYPE(VkReleaseSwapchainImagesInfoEXT);
 DECLARE_DESERIALISE_TYPE(VkRenderingAttachmentInfo);
+DECLARE_DESERIALISE_TYPE(VkRenderingAttachmentLocationInfoKHR);
 DECLARE_DESERIALISE_TYPE(VkRenderingFragmentDensityMapAttachmentInfoEXT);
 DECLARE_DESERIALISE_TYPE(VkRenderingFragmentShadingRateAttachmentInfoKHR);
+DECLARE_DESERIALISE_TYPE(VkRenderingInputAttachmentIndexInfoKHR);
 DECLARE_DESERIALISE_TYPE(VkRenderingInfo);
 DECLARE_DESERIALISE_TYPE(VkRenderPassAttachmentBeginInfo);
 DECLARE_DESERIALISE_TYPE(VkRenderPassBeginInfo);

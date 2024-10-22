@@ -1258,6 +1258,9 @@ bool WrappedVulkan::Serialise_vkBeginCommandBuffer(SerialiserType &ser, VkComman
               BeginInfo.pInheritanceInfo->subpass;
           // framebuffer is not useful here since it may be incomplete (imageless) and it's
           // optional, so we should just treat it as never present.
+
+          m_BakedCmdBufferInfo[BakedCommandBuffer].state.dynamicRendering.localRead.Init(
+              (const VkBaseInStructure *)BeginInfo.pInheritanceInfo);
         }
 
         ObjDisp(cmd)->BeginCommandBuffer(Unwrap(cmd), &unwrappedBeginInfo);
