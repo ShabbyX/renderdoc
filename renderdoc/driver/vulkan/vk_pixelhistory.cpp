@@ -3655,51 +3655,59 @@ struct VulkanPixelHistoryPerFragmentCallback : VulkanPixelHistoryCallback
 
     ApplyDynamicStates(pipeCreateInfo);
 
-    // Output the primitive ID.
-    VkPipelineShaderStageCreateInfo stageCI = {};
-    stageCI.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    stageCI.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    stageCI.module = m_ShaderCache->GetPrimitiveIdShader(colorOutputIndex);
-    stageCI.pName = "main";
-    bool gsFound = false;
-    bool meshFound = false;
-    bool fsFound = false;
-    for(uint32_t i = 0; i < pipeCreateInfo.stageCount; i++)
+    // Output the primitive ID, which requires geometryShader support
+    if(m_pDriver->GetDeviceEnabledFeatures().geometryShader)
     {
-      if(stages[i].stage == VK_SHADER_STAGE_GEOMETRY_BIT)
+      VkPipelineShaderStageCreateInfo stageCI = {};
+      stageCI.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+      stageCI.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+      stageCI.module = m_ShaderCache->GetPrimitiveIdShader(colorOutputIndex);
+      stageCI.pName = "main";
+      bool gsFound = false;
+      bool meshFound = false;
+      bool fsFound = false;
+      for(uint32_t i = 0; i < pipeCreateInfo.stageCount; i++)
       {
-        gsFound = true;
-        break;
+        if(stages[i].stage == VK_SHADER_STAGE_GEOMETRY_BIT)
+        {
+          gsFound = true;
+          break;
+        }
+        if(stages[i].stage == VK_SHADER_STAGE_MESH_BIT_EXT)
+        {
+          meshFound = true;
+          break;
+        }
+        if(stages[i].stage == VK_SHADER_STAGE_FRAGMENT_BIT)
+        {
+          stages[i] = stageCI;
+          fsFound = true;
+        }
       }
-      if(stages[i].stage == VK_SHADER_STAGE_MESH_BIT_EXT)
+      if(!fsFound)
       {
-        meshFound = true;
-        break;
+        stages.push_back(stageCI);
+        pipeCreateInfo.stageCount = (uint32_t)stages.size();
+        pipeCreateInfo.pStages = stages.data();
       }
-      if(stages[i].stage == VK_SHADER_STAGE_FRAGMENT_BIT)
-      {
-        stages[i] = stageCI;
-        fsFound = true;
-      }
-    }
-    if(!fsFound)
-    {
-      stages.push_back(stageCI);
-      pipeCreateInfo.stageCount = (uint32_t)stages.size();
-      pipeCreateInfo.pStages = stages.data();
-    }
 
-    if(!gsFound && !meshFound)
-    {
-      vkr = m_pDriver->vkCreateGraphicsPipelines(m_pDriver->GetDev(), VK_NULL_HANDLE, 1,
-                                                 &pipeCreateInfo, NULL, &pipes.primitiveIdPipe);
-      CHECK_VKR(m_pDriver, vkr);
-      m_PipesToDestroy.push_back(pipes.primitiveIdPipe);
+      if(!gsFound && !meshFound)
+      {
+        vkr = m_pDriver->vkCreateGraphicsPipelines(m_pDriver->GetDev(), VK_NULL_HANDLE, 1,
+                                                   &pipeCreateInfo, NULL, &pipes.primitiveIdPipe);
+        CHECK_VKR(m_pDriver, vkr);
+        m_PipesToDestroy.push_back(pipes.primitiveIdPipe);
+      }
+      else
+      {
+        pipes.primitiveIdPipe = VK_NULL_HANDLE;
+        RDCWARN("Can't get primitive ID at event %u due to geometry shader usage", eid);
+      }
     }
     else
     {
       pipes.primitiveIdPipe = VK_NULL_HANDLE;
-      RDCWARN("Can't get primitive ID at event %u due to geometry shader usage", eid);
+      RDCWARN("Can't get primitive ID at event %u due to lack of geometry shader support", eid);
     }
 
     return pipes;
