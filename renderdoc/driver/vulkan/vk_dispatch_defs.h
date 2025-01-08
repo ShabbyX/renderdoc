@@ -851,6 +851,13 @@ struct VkDevDispatchTable
   // VK_EXT_line_rasterization
   PFN_vkCmdSetLineStippleEXT CmdSetLineStippleEXT;
 
+  // VK_EXT_host_image_copy
+  PFN_vkCopyImageToImageEXT CopyImageToImageEXT;
+  PFN_vkCopyImageToMemoryEXT CopyImageToMemoryEXT;
+  PFN_vkCopyMemoryToImageEXT CopyMemoryToImageEXT;
+  PFN_vkTransitionImageLayoutEXT TransitionImageLayoutEXT;
+  PFN_vkGetImageSubresourceLayout2EXT GetImageSubresourceLayout2EXT;
+
   // VK_EXT_host_query_reset
   PFN_vkResetQueryPoolEXT ResetQueryPoolEXT;
 

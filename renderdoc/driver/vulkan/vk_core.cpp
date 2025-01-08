@@ -1145,6 +1145,10 @@ static const VkExtensionProperties supportedExtensions[] = {
         VK_EXT_HEADLESS_SURFACE_SPEC_VERSION,
     },
     {
+        VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME,
+        VK_EXT_HOST_IMAGE_COPY_SPEC_VERSION,
+    },
+    {
         VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME,
         VK_EXT_HOST_QUERY_RESET_SPEC_VERSION,
     },
@@ -4133,6 +4137,14 @@ bool WrappedVulkan::ProcessChunk(ReadSerialiser &ser, VulkanChunk chunk)
       rdcarray<MemRefInterval> data;
       return GetResourceManager()->Serialise_DeviceMemoryRefs(ser, data);
     }
+    case VulkanChunk::vkCopyImageToImageEXT:
+      return Serialise_vkCopyImageToImageEXT(ser, VK_NULL_HANDLE, NULL);
+    case VulkanChunk::vkCopyImageToMemoryEXT:
+      return Serialise_vkCopyImageToMemoryEXT(ser, VK_NULL_HANDLE, NULL);
+    case VulkanChunk::vkCopyMemoryToImageEXT:
+      return Serialise_vkCopyMemoryToImageEXT(ser, VK_NULL_HANDLE, NULL);
+    case VulkanChunk::vkTransitionImageLayoutEXT:
+      return Serialise_vkTransitionImageLayoutEXT(ser, VK_NULL_HANDLE, 0, NULL);
     case VulkanChunk::vkResetQueryPool:
       return Serialise_vkResetQueryPool(ser, VK_NULL_HANDLE, VK_NULL_HANDLE, 0, 0);
     case VulkanChunk::vkCmdSetLineStippleKHR:

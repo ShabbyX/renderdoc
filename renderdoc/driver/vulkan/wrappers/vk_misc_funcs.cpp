@@ -1724,6 +1724,276 @@ VkResult WrappedVulkan::vkGetQueryPoolResults(VkDevice device, VkQueryPool query
 }
 
 template <typename SerialiserType>
+bool WrappedVulkan::Serialise_vkCopyImageToImageEXT(SerialiserType &ser, VkDevice device, const VkCopyImageToImageInfoEXT *pCopyImageToImageInfo)
+{
+  SERIALISE_ELEMENT(device);
+  SERIALISE_ELEMENT_LOCAL(CopyImageToImageInfo, *pCopyImageToImageInfo).Important();
+
+  Serialise_DebugMessages(ser);
+
+  SERIALISE_CHECK_READ_ERRORS();
+
+  if(IsReplayingAndReading())
+  {
+    CopyImageToImageInfo.srcImage = Unwrap(CopyImageToImageInfo.srcImage);
+    CopyImageToImageInfo.dstImage = Unwrap(CopyImageToImageInfo.dstImage);
+
+    ObjDisp(device)->CopyImageToImageEXT(Unwrap(device), &CopyImageToImageInfo);
+
+    if(IsActiveReplaying(m_State))
+    {
+    // TODO: Something about m_ActionCallback->PostMisc/PostRemisc?
+    }
+    else
+    {
+      AddEvent();
+
+      ResourceId srcid = GetResourceManager()->GetOriginalID(GetResID(CopyImageToImageInfo.srcImage));
+      ResourceId dstid = GetResourceManager()->GetOriginalID(GetResID(CopyImageToImageInfo.dstImage));
+
+      ActionDescription action;
+      action.flags |= ActionFlags::Copy;
+
+      action.copySource = srcid;
+      action.copySourceSubresource = Subresource();
+      action.copyDestination = dstid;
+      action.copyDestinationSubresource = Subresource();
+      if(CopyImageToImageInfo.regionCount > 0)
+      {
+        action.copySourceSubresource = Subresource(pRegions[0].srcSubresource.mipLevel,
+                                                   pRegions[0].srcSubresource.baseArrayLayer);
+        action.copyDestinationSubresource = Subresource(
+            pRegions[0].dstSubresource.mipLevel, pRegions[0].dstSubresource.baseArrayLayer);
+      }
+
+      AddAction(action);
+
+      VulkanActionTreeNode &actionNode = GetActionStack().back()->children.back();
+
+      if(CopyImageToImageInfo.srcImage == CopyImageToImageInfo.dstImage)
+      {
+        actionNode.resourceUsage.push_back(make_rdcpair(
+            GetResID(CopyImageToImageInfo.srcImage), EventUsage(actionNode.action.eventId, ResourceUsage::Copy)));
+      }
+      else
+      {
+        actionNode.resourceUsage.push_back(make_rdcpair(
+            GetResID(CopyImageToImageInfo.srcImage), EventUsage(actionNode.action.eventId, ResourceUsage::CopySrc)));
+        actionNode.resourceUsage.push_back(make_rdcpair(
+            GetResID(CopyImageToImageInfo.dstImage), EventUsage(actionNode.action.eventId, ResourceUsage::CopyDst)));
+      }
+    }
+  }
+
+  return true;
+}
+
+VkResult WrappedVulkan::vkCopyImageToImageEXT(VkDevice device, const VkCopyImageToImageInfoEXT *pCopyImageToImageInfo)
+{
+  SCOPED_DBG_SINK();
+
+  byte *tempMem = GetTempMemory(GetNextPatchSize(pCopyImageToImageInfo));
+  VkCopyImageToImageInfoEXT *unwrappedInfo = UnwrapStructAndChain(m_State, tempMem, pCopyImageToImageInfo);
+
+  SERIALISE_TIME_CALL(ObjDisp(device)->CopyImageToImageEXT(Unwrap(device), unwrappedInfo));
+
+  if(IsActiveCapturing(m_State))
+  {
+    CACHE_THREAD_SERIALISER();
+
+    ser.SetActionChunk();
+    SCOPED_SERIALISE_CHUNK(VulkanChunk::vkCopyImageToImageEXT);
+    Serialise_vkCopyImageToImageEXT(ser, device, pCopyImageToImageInfo);
+
+    m_FrameCaptureRecord->AddChunk(scope.Get());
+    for(uint32_t i = 0; i < regionCount; i++)
+    {
+      const VkImageCopy2 &region = pRegions[i];
+
+      ImageRange srcRange(region.srcSubresource);
+      srcRange.offset = region.srcOffset;
+      srcRange.extent = region.extent;
+
+      ImageRange dstRange(region.dstSubresource);
+      dstRange.offset = region.dstOffset;
+      dstRange.extent = region.extent;
+
+      // TODO: vkCmdCopyImage has GetRecord(commandBuffer), what record to use here?
+      record->MarkImageFrameReferenced(GetRecord(pCopyImageToImageInfo->srcImage), srcRange, eFrameRef_Read);
+      record->MarkImageFrameReferenced(GetRecord(pCopyImageToImageInfo->dstImage), dstRange, eFrameRef_CompleteWrite);
+    }
+  }
+}
+
+template <typename SerialiserType>
+bool WrappedVulkan::Serialise_vkCopyImageToMemoryEXT(SerialiserType &ser, VkDevice device, const VkCopyImageToMemoryInfoEXT *pCopyImageToMemoryInfo)
+{
+  SERIALISE_ELEMENT(device);
+  SERIALISE_ELEMENT_LOCAL(CopyImageToMemoryInfo, *pCopyImageToMemoryInfo).Important();
+
+  Serialise_DebugMessages(ser);
+
+  SERIALISE_CHECK_READ_ERRORS();
+
+  if(IsReplayingAndReading())
+  {
+    CopyImageToMemoryInfo.srcImage = Unwrap(CopyImageToMemoryInfo.srcImage);
+
+    ObjDisp(device)->CopyImageToMemoryEXT(Unwrap(device), &CopyImageToMemoryInfo);
+
+    if(IsActiveReplaying(m_State))
+    {
+    // TODO: Something about m_ActionCallback->PostMisc/PostRemisc?
+    }
+    else
+    {
+      AddEvent();
+
+      ResourceId srcid = GetResourceManager()->GetOriginalID(GetResID(CopyImageToMemoryInfo.srcImage));
+
+      ActionDescription action;
+      action.flags |= ActionFlags::Copy;
+
+      action.copySource = srcid;
+      action.copySourceSubresource = Subresource();
+      if(CopyImageToMemoryInfo.regionCount > 0)
+      {
+        action.copySourceSubresource = Subresource(pRegions[0].imageSubresource.mipLevel,
+                                                   pRegions[0].imageSubresource.baseArrayLayer);
+      }
+
+      AddAction(action);
+
+      VulkanActionTreeNode &actionNode = GetActionStack().back()->children.back();
+
+      actionNode.resourceUsage.push_back(make_rdcpair(
+          GetResID(CopyImageToMemoryInfo.srcImage), EventUsage(actionNode.action.eventId, ResourceUsage::CopySrc)));
+    }
+  }
+
+  return true;
+}
+
+VkResult WrappedVulkan::vkCopyImageToMemoryEXT(VkDevice device, const VkCopyImageToMemoryInfoEXT *pCopyImageToMemoryInfo)
+{
+  SCOPED_DBG_SINK();
+
+  byte *tempMem = GetTempMemory(GetNextPatchSize(pCopyImageToMemoryInfo));
+  VkCopyImageToMemoryInfoEXT *unwrappedInfo = UnwrapStructAndChain(m_State, tempMem, pCopyImageToMemoryInfo);
+
+  SERIALISE_TIME_CALL(ObjDisp(device)->CopyImageToMemoryEXT(Unwrap(device), unwrappedInfo));
+
+  if(IsActiveCapturing(m_State))
+  {
+    CACHE_THREAD_SERIALISER();
+
+    ser.SetActionChunk();
+    SCOPED_SERIALISE_CHUNK(VulkanChunk::vkCopyImageToMemoryEXT);
+    Serialise_vkCopyImageToMemoryEXT(ser, device, pCopyImageToMemoryInfo);
+
+    m_FrameCaptureRecord->AddChunk(scope.Get());
+    for(uint32_t i = 0; i < regionCount; i++)
+    {
+      const VkImageToMemoryCopyEXT &region = pRegions[i];
+
+      ImageRange srcRange(region.imageSubresource);
+      srcRange.offset = region.imageOffset;
+      srcRange.extent = region.imageExtent;
+
+      // TODO: vkCmdCopyImage has GetRecord(commandBuffer), what record to use here?
+      record->MarkImageFrameReferenced(GetRecord(pCopyImageToMemoryInfo->srcImage), srcRange, eFrameRef_Read);
+
+      // TODO: what to do with the data that's read back? Ideally, RenderDoc would show what the
+      // data is somewhere.
+    }
+  }
+}
+
+template <typename SerialiserType>
+bool WrappedVulkan::Serialise_vkCopyMemoryToImageEXT(SerialiserType &ser, VkDevice device, const VkCopyMemoryToImageInfoEXT *pCopyMemoryToImageInfo)
+{
+  SERIALISE_ELEMENT(device);
+  SERIALISE_ELEMENT_LOCAL(CopyMemoryToImageInfo, *pCopyMemoryToImageInfo).Important();
+
+  Serialise_DebugMessages(ser);
+
+  SERIALISE_CHECK_READ_ERRORS();
+
+  if(IsReplayingAndReading())
+  {
+    CopyMemoryToImageInfo.dstImage = Unwrap(CopyMemoryToImageInfo.dstImage);
+
+    ObjDisp(device)->CopyMemoryToImageEXT(Unwrap(device), &CopyMemoryToImageInfo);
+
+    if(IsActiveReplaying(m_State))
+    {
+    // TODO: Something about m_ActionCallback->PostMisc/PostRemisc?
+    }
+    else
+    {
+      AddEvent();
+
+      ResourceId dstid = GetResourceManager()->GetOriginalID(GetResID(CopyMemoryToImageInfo.dstImage));
+
+      ActionDescription action;
+      action.flags |= ActionFlags::Copy;
+
+      action.copySource = dstid;
+      action.copySourceSubresource = Subresource();
+      if(CopyMemoryToImageInfo.regionCount > 0)
+      {
+        action.copySourceSubresource = Subresource(pRegions[0].imageSubresource.mipLevel,
+                                                   pRegions[0].imageSubresource.baseArrayLayer);
+      }
+
+      AddAction(action);
+
+      VulkanActionTreeNode &actionNode = GetActionStack().back()->children.back();
+
+      actionNode.resourceUsage.push_back(make_rdcpair(
+          GetResID(CopyMemoryToImageInfo.dstImage), EventUsage(actionNode.action.eventId, ResourceUsage::CopyDst)));
+    }
+  }
+
+  return true;
+}
+
+VkResult WrappedVulkan::vkCopyMemoryToImageEXT(VkDevice device, const VkCopyMemoryToImageInfoEXT *pCopyMemoryToImageInfo)
+{
+  SCOPED_DBG_SINK();
+
+  byte *tempMem = GetTempMemory(GetNextPatchSize(pCopyMemoryToImageInfo));
+  VkCopyMemoryToImageInfoEXT *unwrappedInfo = UnwrapStructAndChain(m_State, tempMem, pCopyMemoryToImageInfo);
+
+  SERIALISE_TIME_CALL(ObjDisp(device)->CopyMemoryToImageEXT(Unwrap(device), unwrappedInfo));
+
+  if(IsActiveCapturing(m_State))
+  {
+    CACHE_THREAD_SERIALISER();
+
+    ser.SetActionChunk();
+    SCOPED_SERIALISE_CHUNK(VulkanChunk::vkCopyMemoryToImageEXT);
+    Serialise_vkCopyMemoryToImageEXT(ser, device, pCopyMemoryToImageInfo);
+
+    m_FrameCaptureRecord->AddChunk(scope.Get());
+    for(uint32_t i = 0; i < regionCount; i++)
+    {
+      const VkMemoryToImageCopyEXT &region = pRegions[i];
+
+      ImageRange dstRange(region.imageSubresource);
+      dstRange.offset = region.imageOffset;
+      dstRange.extent = region.imageExtent;
+
+      // TODO: vkCmdCopyImage has GetRecord(commandBuffer), what record to use here?
+      record->MarkImageFrameReferenced(GetRecord(pCopyMemoryToImageInfo->dstImage), dstRange, eFrameRef_Read);
+
+      // TODO: what to do with the data that's read back? Ideally, RenderDoc would show what the
+      // data is somewhere.
+    }
+  }
+}
+
+template <typename SerialiserType>
 bool WrappedVulkan::Serialise_vkResetQueryPool(SerialiserType &ser, VkDevice device,
                                                VkQueryPool queryPool, uint32_t firstQuery,
                                                uint32_t queryCount)

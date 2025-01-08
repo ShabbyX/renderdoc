@@ -1314,3 +1314,8 @@ VkDeviceSize WrappedVulkan::vkGetRayTracingShaderGroupStackSizeKHR(
   return ObjDisp(device)->GetRayTracingShaderGroupStackSizeKHR(Unwrap(device), Unwrap(pipeline),
                                                                group, groupShader);
 }
+
+void WrappedVulkan::vkGetImageSubresourceLayout2EXT(VkDevice device, VkImage image, const VkImageSubresource2 *pSubresource, VkSubresourceLayout2 *pLayout)
+{
+  return ObjDisp(device)->GetImageSubresourceLayout2EXT(Unwrap(device), Unwrap(image), pSubresource, pLayout);
+}

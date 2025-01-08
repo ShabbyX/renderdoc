@@ -247,6 +247,10 @@ rdcstr DoStringise(const VulkanChunk &el)
     STRINGISE_ENUM_CLASS(vkCreateRayTracingPipelinesKHR)
     STRINGISE_ENUM_CLASS(vkCmdSetRenderingAttachmentLocationsKHR)
     STRINGISE_ENUM_CLASS(vkCmdSetRenderingInputAttachmentIndicesKHR)
+    STRINGISE_ENUM_CLASS(vkCopyImageToImageEXT)
+    STRINGISE_ENUM_CLASS(vkCopyImageToMemoryEXT)
+    STRINGISE_ENUM_CLASS(vkCopyMemoryToImageEXT)
+    STRINGISE_ENUM_CLASS(vkTransitionImageLayoutEXT)
     STRINGISE_ENUM_CLASS_NAMED(Max, "Max Chunk");
   }
   END_ENUM_STRINGISE()

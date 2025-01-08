@@ -1140,6 +1140,10 @@ enum class VulkanChunk : uint32_t
   vkCreateRayTracingPipelinesKHR,
   vkCmdSetRenderingAttachmentLocationsKHR,
   vkCmdSetRenderingInputAttachmentIndicesKHR,
+  vkCopyImageToImageEXT,
+  vkCopyImageToMemoryEXT,
+  vkCopyMemoryToImageEXT,
+  vkTransitionImageLayoutEXT,
   Max,
 };
 
@@ -1411,6 +1415,8 @@ DECLARE_REFLECTION_STRUCT(VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR);
 DECLARE_REFLECTION_STRUCT(VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT);
 DECLARE_REFLECTION_STRUCT(VkPhysicalDeviceGraphicsPipelineLibraryPropertiesEXT);
 DECLARE_REFLECTION_STRUCT(VkPhysicalDeviceGroupProperties);
+DECLARE_REFLECTION_STRUCT(VkPhysicalDeviceHostImageCopyFeaturesEXT);
+DECLARE_REFLECTION_STRUCT(VkPhysicalDeviceHostImageCopyPropertiesEXT);
 DECLARE_REFLECTION_STRUCT(VkPhysicalDeviceHostQueryResetFeatures);
 DECLARE_REFLECTION_STRUCT(VkPhysicalDeviceIDProperties);
 DECLARE_REFLECTION_STRUCT(VkPhysicalDeviceImage2DViewOf3DFeaturesEXT);
@@ -1854,6 +1860,8 @@ DECLARE_DESERIALISE_TYPE(VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR);
 DECLARE_DESERIALISE_TYPE(VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT);
 DECLARE_DESERIALISE_TYPE(VkPhysicalDeviceGraphicsPipelineLibraryPropertiesEXT);
 DECLARE_DESERIALISE_TYPE(VkPhysicalDeviceGroupProperties);
+DECLARE_DESERIALISE_TYPE(VkPhysicalDeviceHostImageCopyFeaturesEXT);
+DECLARE_DESERIALISE_TYPE(VkPhysicalDeviceHostImageCopyPropertiesEXT);
 DECLARE_DESERIALISE_TYPE(VkPhysicalDeviceHostQueryResetFeatures);
 DECLARE_DESERIALISE_TYPE(VkPhysicalDeviceIDProperties);
 DECLARE_DESERIALISE_TYPE(VkPhysicalDeviceImage2DViewOf3DFeaturesEXT);
