@@ -28,7 +28,7 @@
 template <>
 rdcstr DoStringise(const VulkanChunk &el)
 {
-  RDCCOMPILE_ASSERT((uint32_t)VulkanChunk::Max == 1215, "Chunks changed without updating names");
+  RDCCOMPILE_ASSERT((uint32_t)VulkanChunk::Max == 1219, "Chunks changed without updating names");
 
   BEGIN_ENUM_STRINGISE(VulkanChunk)
   {
@@ -247,6 +247,10 @@ rdcstr DoStringise(const VulkanChunk &el)
     STRINGISE_ENUM_CLASS(vkCreateRayTracingPipelinesKHR)
     STRINGISE_ENUM_CLASS(vkCmdSetRenderingAttachmentLocationsKHR)
     STRINGISE_ENUM_CLASS(vkCmdSetRenderingInputAttachmentIndicesKHR)
+    STRINGISE_ENUM_CLASS(vkCopyImageToImageEXT)
+    STRINGISE_ENUM_CLASS(vkCopyImageToMemoryEXT)
+    STRINGISE_ENUM_CLASS(vkCopyMemoryToImageEXT)
+    STRINGISE_ENUM_CLASS(vkTransitionImageLayoutEXT)
     STRINGISE_ENUM_CLASS_NAMED(Max, "Max Chunk");
   }
   END_ENUM_STRINGISE()
@@ -4065,6 +4069,16 @@ rdcstr DoStringise(const VkCopyAccelerationStructureModeKHR &el)
     STRINGISE_ENUM(VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR)
     STRINGISE_ENUM(VK_COPY_ACCELERATION_STRUCTURE_MODE_SERIALIZE_KHR)
     STRINGISE_ENUM(VK_COPY_ACCELERATION_STRUCTURE_MODE_DESERIALIZE_KHR)
+  }
+  END_ENUM_STRINGISE();
+}
+
+template <>
+rdcstr DoStringise(const VkHostImageCopyFlagBitsEXT &el)
+{
+  BEGIN_ENUM_STRINGISE(VkHostImageCopyFlagBitsEXT);
+  {
+    STRINGISE_ENUM(VK_HOST_IMAGE_COPY_MEMCPY_EXT)
   }
   END_ENUM_STRINGISE();
 }

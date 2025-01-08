@@ -1450,6 +1450,21 @@ public:
     return NULL;
   }
 
+  // Helpers to support serializing VkCopyImageToMemoryInfoEXT and VkCopyMemoryToImageInfoEXT.
+  size_t CalculateImageMemoryCopyHostMemorySize(VkImage image, VkHostImageCopyFlagsEXT flags, uint32_t memoryRowLength,
+    uint32_t memoryImageHeight, const VkImageSubresourceLayers &imageSubresource,
+    const VkExtent3D &imageExtent);
+  size_t CalculateImageToMemoryCopyHostMemorySize(VkImage image, const VkImageToMemoryCopyEXT &region, VkHostImageCopyFlagsEXT flags)
+  {
+    return CalculateImageMemoryCopyHostMemorySize(image, flags, region.memoryRowLength, region.memoryImageHeight,
+        region.imageSubresource, region.imageExtent);
+  }
+  size_t CalculateMemoryToImageCopyHostMemorySize(VkImage image, const VkMemoryToImageCopyEXT &region, VkHostImageCopyFlagsEXT flags)
+  {
+    return CalculateImageMemoryCopyHostMemorySize(image, flags, region.memoryRowLength, region.memoryImageHeight,
+        region.imageSubresource, region.imageExtent);
+  }
+
   // Device initialization
 
   IMPLEMENT_FUNCTION_SERIALISED(VkResult, vkCreateInstance, const VkInstanceCreateInfo *pCreateInfo,
@@ -2522,6 +2537,14 @@ public:
   VkResult vkGetCalibratedTimestampsKHR(VkDevice device, uint32_t timestampCount,
                                         const VkCalibratedTimestampInfoKHR *pTimestampInfos,
                                         uint64_t *pTimestamps, uint64_t *pMaxDeviation);
+
+  // VK_EXT_host_image_copy
+
+  IMPLEMENT_FUNCTION_SERIALISED(VkResult, vkCopyImageToImageEXT, VkDevice device, const VkCopyImageToImageInfoEXT *pCopyImageToImageInfo);
+  IMPLEMENT_FUNCTION_SERIALISED(VkResult, vkCopyImageToMemoryEXT, VkDevice device, const VkCopyImageToMemoryInfoEXT *pCopyImageToMemoryInfo);
+  IMPLEMENT_FUNCTION_SERIALISED(VkResult, vkCopyMemoryToImageEXT, VkDevice device, const VkCopyMemoryToImageInfoEXT *pCopyMemoryToImageInfo);
+  IMPLEMENT_FUNCTION_SERIALISED(VkResult, vkTransitionImageLayoutEXT, VkDevice device, uint32_t transitionCount, const VkHostImageLayoutTransitionInfoEXT *pTransitions);
+  void vkGetImageSubresourceLayout2EXT(VkDevice device, VkImage image, const VkImageSubresource2EXT *pSubresource, VkSubresourceLayout2EXT *pLayout);
 
   // VK_EXT_host_query_reset
 

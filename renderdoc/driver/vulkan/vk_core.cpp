@@ -1145,6 +1145,10 @@ static const VkExtensionProperties supportedExtensions[] = {
         VK_EXT_HEADLESS_SURFACE_SPEC_VERSION,
     },
     {
+        VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME,
+        VK_EXT_HOST_IMAGE_COPY_SPEC_VERSION,
+    },
+    {
         VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME,
         VK_EXT_HOST_QUERY_RESET_SPEC_VERSION,
     },
@@ -4133,6 +4137,14 @@ bool WrappedVulkan::ProcessChunk(ReadSerialiser &ser, VulkanChunk chunk)
       rdcarray<MemRefInterval> data;
       return GetResourceManager()->Serialise_DeviceMemoryRefs(ser, data);
     }
+    case VulkanChunk::vkCopyImageToImageEXT:
+      return Serialise_vkCopyImageToImageEXT(ser, VK_NULL_HANDLE, NULL);
+    case VulkanChunk::vkCopyImageToMemoryEXT:
+      return Serialise_vkCopyImageToMemoryEXT(ser, VK_NULL_HANDLE, NULL);
+    case VulkanChunk::vkCopyMemoryToImageEXT:
+      return Serialise_vkCopyMemoryToImageEXT(ser, VK_NULL_HANDLE, NULL);
+    case VulkanChunk::vkTransitionImageLayoutEXT:
+      return Serialise_vkTransitionImageLayoutEXT(ser, VK_NULL_HANDLE, 0, NULL);
     case VulkanChunk::vkResetQueryPool:
       return Serialise_vkResetQueryPool(ser, VK_NULL_HANDLE, VK_NULL_HANDLE, 0, 0);
     case VulkanChunk::vkCmdSetLineStippleKHR:
@@ -5950,6 +5962,45 @@ void WrappedVulkan::UpdateImageStates(const rdcflatmap<ResourceId, ImageState> &
     it->second.LockWrite()->Merge(dstIt->second, info);
     ++dstIt;
   }
+}
+
+size_t WrappedVulkan::CalculateImageMemoryCopyHostMemorySize(VkImage image, VkHostImageCopyFlagsEXT flags, uint32_t memoryRowLength,
+    uint32_t memoryImageHeight, const VkImageSubresourceLayers &imageSubresource, const VkExtent3D &imageExtent)
+{
+  if((flags & VK_HOST_IMAGE_COPY_MEMCPY_EXT) != 0)
+  {
+    // If this is a memcpy copy, the data is preswizzled for this image.  The contents of
+    // memoryRowLength and memoryImageHeight are meaningless, and the entirety of the image
+    // subresource is copied.  In this case, the driver needs to be queried to determine the amount
+    // of memory needed to hold the preswizzled image data.
+
+    VkImageSubresource2EXT subresource{VK_STRUCTURE_TYPE_IMAGE_SUBRESOURCE_2_EXT};
+    subresource.imageSubresource.aspectMask = imageSubresource.aspectMask;
+    subresource.imageSubresource.mipLevel = imageSubresource.mipLevel;
+    subresource.imageSubresource.arrayLayer = imageSubresource.baseArrayLayer;
+
+    VkSubresourceHostMemcpySizeEXT memcpySize{VK_STRUCTURE_TYPE_SUBRESOURCE_HOST_MEMCPY_SIZE_EXT};
+    VkSubresourceLayout2EXT layout{VK_STRUCTURE_TYPE_SUBRESOURCE_LAYOUT_2_EXT};
+    layout.pNext = &memcpySize;
+
+    vkGetImageSubresourceLayout2EXT(m_Device, image, &subresource, &layout);
+
+    return memcpySize.size * imageSubresource.layerCount;
+  }
+
+  // If either of memoryRowLength and memoryImageHeight are 0, they are implicitly derived from
+  // imageExtent.
+  if(memoryRowLength == 0)
+  {
+    memoryRowLength = imageExtent.width;
+  }
+  if(memoryImageHeight == 0)
+  {
+    memoryImageHeight = imageExtent.height;
+  }
+
+  return GetByteSize(memoryRowLength, memoryImageHeight, imageExtent.depth,
+      m_CreationInfo.m_Image[GetResID(image)].format, 0);
 }
 
 void WrappedVulkan::ReplayDraw(VkCommandBuffer cmd, const ActionDescription &action)
